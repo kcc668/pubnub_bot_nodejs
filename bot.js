@@ -2,6 +2,7 @@ function argv2o(argv,m,mm){var rt={};for(k in argv)(m=(rt[""+k]=argv[k]).match(/
 
 var {
 	persit_config,
+	SKEY_SVR,PKEY_SVR,
 	SKEY_BOT,PKEY_BOT,
 	app,bot_id
 } = argv2o(process.argv);
@@ -27,9 +28,10 @@ if(!my_uuid){
 }else{
 	//use previous to save devices
 	pubnub_bot.setUUID(my_uuid);
+	//pubnub_svr.setUUID(my_uuid);
 }
 
-var g_server_down_sub_key=null;
+/////////////////////////////////
 
 var g_handler_a={
 };
@@ -43,18 +45,19 @@ pubnub_bot.addListener({
 		var msg=m.message||{};
 		var SKEY=msg.SKEY;
 		if(SKEY){
-			if(!g_server_down_sub_key){
-				g_server_down_sub_key=SKEY;
+			if(!SKEY_SVR){
+				SKEY_SVR=SKEY;
 			}
-			if(SKEY!=g_server_down_sub_key){
+			if(SKEY!=SKEY_SVR){
 				console.log('SKEY changed, exit and wait for next round');
 				process.exit();
 			}
 			if(!pubnub_svr){
 				console.log('SKEY message:',m);
 				pubnub_svr = new PubNubCls({
-					subscribeKey: g_server_down_sub_key,
+					subscribeKey: SKEY_SVR,
 				});
+				pubnub_svr.setUUID(my_uuid);
 				pubnub_svr.addListener({   
 					message: function(m) {
 						var {handlerName,callbackId,callData} = m;
