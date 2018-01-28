@@ -39,8 +39,23 @@ pubnub_bot.subscribe({ channels: [ PKEY_SVR ] });
 
 pubnub_bot.addListener({
 	message: function(m) {
-		console.log('TODO BOT message:',m);
 		//TODO to test send sth to the sender
+		//console.log('TODO BOT m=:',m.message);
+		var target_bot_uuid = m.message.params.uuid;
+		if(target_bot_uuid){
+			pubnub_svr.publish
+			({
+				message: { handlerName:'external', callData:{"TODO":"YES"} },
+				channel: target_bot_uuid,
+				sendByPost: true, // true to send via post
+			}).then((response) => {
+				console.log('msg sent bot',response)
+			}).catch((error) => {
+				console.log('error for sending bot:',error)
+			});
+		}else{
+			console.log('!!! UNKNOWN BOT message.');
+		}
 	},
 	//presence: function(p) { console.log('TODO presence:',p); },
 	status: function(s) { console.log('bot status:',s); }
@@ -54,4 +69,7 @@ pubnub_svr.addListener({
 	status: function(s) { console.log('bot status:',s); }
 });
 
+//setTimeout(()=>{
+//	pubnub_svr.publish({channel:target_bot_uuid,message:{???}})
+//},3333);
 

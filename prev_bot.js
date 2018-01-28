@@ -33,12 +33,6 @@ if(!my_uuid){
 
 /////////////////////////////////
 
-//TODO
-//function BridgeCls(){
-//this.callHandler=
-//this.registerHandler=
-//}
-//var gBridge=new BridgeCls(...)
 var g_handler_a={
 };
 
@@ -59,41 +53,17 @@ pubnub_bot.addListener({
 				process.exit();
 			}
 			if(!pubnub_svr){
-				console.log('SKEY Update:',m);
+				console.log('SKEY message:',m);
 				pubnub_svr = new PubNubCls({
 					subscribeKey: SKEY_SVR,
 				});
 				pubnub_svr.setUUID(my_uuid);
 				pubnub_svr.addListener({   
 					message: function(m) {
-						//TODO gBridge
-						var {handlerName,callbackId,callData} = m.message;
+						var {handlerName,callbackId,callData} = m;
 						var handlerFunc = g_handler_a[handlerName];
 						if(handlerFunc){
-							//setTimeout(()=>{
-								var callbackData = handlerFunc(callData,m.message,m);
-								if(callbackData){
-									//callHandler _me2remote
-									console.log('TODO callback the data');
-		//var alive = '' + new Date();
-		//pubnub_bot.fire
-		//({
-		//	message: { app, bot_id, SKEY:SKEY_SVR,handlerName:'SignIn' },
-		//	channel: ???,
-		//	sendByPost: true, // true to send via post
-		//}).then((response) => {
-		//	console.log('my_uuid=',my_uuid,alive)
-		//	setTimeout(function(){
-		//		IntervalSignIn(g_time_for_interval)
-		//	},g_time_for_interval)
-		//}).catch((error) => {
-		//	console.log('error:',error)
-		//	setTimeout(function(){
-		//		IntervalSignIn(g_time_for_interval)
-		//	},g_time_for_interval)
-		//});
-								}
-							//},1);
+							handlerFunc(m);
 						}else{
 							console.log('TODO server message:',m);
 						}
@@ -110,17 +80,40 @@ pubnub_bot.addListener({
 	status: function(s) { console.log('bot status:',s); }
 });
 
-/////////////////////////////// INTERVALLY SIGNIN
+//_me2remote(callbackId,handlerName,data){}
+//_remote2me:
+//if(msg.responseId){
+//}else{if(msg.handlerName){
+//handlerFunc(msg.data, function(responseData){
+//var callbackResponseId = msg.callbackId
+//_me2remote({responseId:callbackResponseId,responseData})
+//})
+//}
+
+//TODO for command line do command, or do internal logic...
+//pubnub_interface.registerHandler('external',({callbackId,data})=>{
+//	//invoke the cmd
+//	var s = exec(data.cmd);
+//	var responseId=callbackId;
+//	var responseData={s};
+//	pubnub_interface.callHandler('external_callback',{responseId,responseData});
+//});
+
+///////////////////////////////
 var g_time_for_interval=0;
 function IntervalSignIn(time_for_interval){
 	g_time_for_interval=time_for_interval;
 	if(g_time_for_interval>0){
 		var alive = '' + new Date();
-		pubnub_bot.fire
+		pubnub_bot.fire//fire to the BLOCK FUNC
 		({
-			message: { app, bot_id, /*my_uuid, */SKEY:SKEY_SVR,handlerName:'SignIn' },
+			message: { app, bot_id, my_uuid },
 			channel: 'PUBLIC',
-			sendByPost: true, // true to send via post
+			//sendByPost: true, // true to send via post
+			//storeInHistory: false, //override default storage options
+			//meta: { 
+			//    "cool": "meta"
+			//}   // publish extra meta with the request
 		}).then((response) => {
 			console.log('my_uuid=',my_uuid,alive)
 			setTimeout(function(){
@@ -135,26 +128,3 @@ function IntervalSignIn(time_for_interval){
 	}
 }
 IntervalSignIn(11111);
-
-/////////////////////////////// REGISTER HANDLER
-
-//_me2remote(callbackId,handlerName,data){}
-//_remote2me:
-//if(msg.responseId){
-//}else{if(msg.handlerName){
-//handlerFunc(msg.data, function(responseData){
-//var callbackResponseId = msg.callbackId
-//_me2remote({responseId:callbackResponseId,responseData})
-//})
-//}
-g_handler_a['external']=function(callData,callMsg,pubnubMsg){
-	console.log('TODO external',callData,callMsg);
-};
-//gBridge.registerHandler('external',({callbackId,data})=>{
-//	//invoke the cmd
-//	var s = exec(data.cmd);
-//	var responseId=callbackId;
-//	var responseData={s};
-//	gBridge.callHandler('external_callback',{responseId,responseData});
-//});
-
