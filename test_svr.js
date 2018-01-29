@@ -37,24 +37,34 @@ if(!my_uuid){
 
 pubnub_bot.subscribe({ channels: [ PKEY_SVR ] });
 
+function TestSentBot1(m){
+	//TODO make callHandler() with callback...!!! + Timeout checking....
+	//TODO to test send sth to the sender
+	//console.log('TODO BOT m=:',m.message);
+	var target_bot_uuid = m.message.params.uuid;
+	if(target_bot_uuid){
+		pubnub_svr.publish
+		({
+			message: { handlerName:'external', callData:'env', callbackId:'T'+(new Date()).getTime() },
+			channel: target_bot_uuid,
+			sendByPost: true, // true to send via post
+		}).then((response) => {
+			console.log('    = => test msg sent bot',response)
+		}).catch((error) => {
+			console.log('error for sending bot:',error)
+		});
+	}else{
+		console.log('!!! UNKNOWN BOT message.');
+	}
+}
 pubnub_bot.addListener({
 	message: function(m) {
-		//TODO to test send sth to the sender
-		//console.log('TODO BOT m=:',m.message);
-		var target_bot_uuid = m.message.params.uuid;
-		if(target_bot_uuid){
-			pubnub_svr.publish
-			({
-				message: { handlerName:'external', callData:{"TODO":"YES"} },
-				channel: target_bot_uuid,
-				sendByPost: true, // true to send via post
-			}).then((response) => {
-				console.log('msg sent bot',response)
-			}).catch((error) => {
-				console.log('error for sending bot:',error)
-			});
+		//TODO save the uuid for later use... and send msg from web UI later....
+		if(m.message.message.responseId){
+			console.log('response message:',m.message.message);
 		}else{
-			console.log('!!! UNKNOWN BOT message.');
+			//console.log('DEBUG:',m.message);
+			TestSentBot1(m);//just quick test
 		}
 	},
 	//presence: function(p) { console.log('TODO presence:',p); },

@@ -39,66 +39,69 @@ if(!my_uuid){
 //this.registerHandler=
 //}
 //var gBridge=new BridgeCls(...)
-var g_handler_a={
-};
+var g_handler_a={};
 
 pubnub_bot.subscribe({ channels: [ 'PUBLIC',//no use
 	my_uuid//for SKEY back
 ] });
+
+var _svr2bot=function(callMsg){
+	var {handlerName,callbackId,callData} = callMsg.message;
+	var handlerFunc = g_handler_a[handlerName];
+	if(handlerFunc){
+		var responseData=handlerFunc(callData);
+		if(responseData){
+
+		}
+	}
+};
 
 pubnub_bot.addListener({
 	message: function(m) {
 		var msg=m.message||{};
 		var SKEY=msg.SKEY;
 		if(SKEY){
-			if(!SKEY_SVR){
-				SKEY_SVR=SKEY;
-			}
-			if(SKEY!=SKEY_SVR){
-				console.log('SKEY changed, exit and wait for next round');
-				process.exit();
-			}
+			if(!SKEY_SVR){ SKEY_SVR=SKEY; }
+			if(SKEY!=SKEY_SVR){ console.log('SKEY changed, exit and wait for next round'); process.exit(); }
 			if(!pubnub_svr){
 				console.log('SKEY Update:',m);
-				pubnub_svr = new PubNubCls({
-					subscribeKey: SKEY_SVR,
-				});
+				pubnub_svr = new PubNubCls({ subscribeKey: SKEY_SVR, });
 				pubnub_svr.setUUID(my_uuid);
-				pubnub_svr.addListener({   
+				pubnub_svr.addListener({
 					message: function(m) {
+
+						//_svr2bot(m.message||{});
+
 						//TODO gBridge
 						var {handlerName,callbackId,callData} = m.message;
 						var handlerFunc = g_handler_a[handlerName];
+						//TODO if(responseId) if responseId, means this msg is a response from the svr which responding to one of my previous call with callbackId... but for current version, the bot don't need to call out....so make it to do...
+						//TODO NOTES: pubnub only support 32KB message, so if the command need big return, other solution needed, such as FTP or EMAIL to some place?
 						if(handlerFunc){
-							//setTimeout(()=>{
-								var callbackData = handlerFunc(callData,m.message,m);
-								if(callbackData){
-									//callHandler _me2remote
-									console.log('TODO callback the data');
-		//var alive = '' + new Date();
-		//pubnub_bot.fire
-		//({
-		//	message: { app, bot_id, SKEY:SKEY_SVR,handlerName:'SignIn' },
-		//	channel: ???,
-		//	sendByPost: true, // true to send via post
-		//}).then((response) => {
-		//	console.log('my_uuid=',my_uuid,alive)
-		//	setTimeout(function(){
-		//		IntervalSignIn(g_time_for_interval)
-		//	},g_time_for_interval)
-		//}).catch((error) => {
-		//	console.log('error:',error)
-		//	setTimeout(function(){
-		//		IntervalSignIn(g_time_for_interval)
-		//	},g_time_for_interval)
-		//});
-								}
-							//},1);
+							var callback=null;
+							if(callbackId){
+								callback=function(responseData){
+									pubnub_bot.fire
+									({
+										message: { app, bot_id, SKEY:SKEY_SVR, handlerName, responseId:callbackId, responseData },
+										channel: 'PUBLIC',//need improve later??
+										sendByPost: true, // true to send via post
+									}).then((response) => {
+										//console.log('send back',responseData)
+										console.log('send back...',callbackId)
+									}).catch((error) => {
+										console.log('send back error:',error)
+									});
+								};
+							}else{
+								console.log('TODO no callbackId from svr');
+							}
+							handlerFunc(callData,m.message,m,callback);
 						}else{
 							console.log('TODO server message:',m);
 						}
 					},
-					status: function(s) { console.log('svr status:',s); }
+					status: function(s) { console.log('pubnub_svr status:',s); }
 				});
 				pubnub_svr.subscribe({ channels: [my_uuid], });
 			}
@@ -136,25 +139,20 @@ function IntervalSignIn(time_for_interval){
 }
 IntervalSignIn(11111);
 
-/////////////////////////////// REGISTER HANDLER
-
-//_me2remote(callbackId,handlerName,data){}
-//_remote2me:
-//if(msg.responseId){
-//}else{if(msg.handlerName){
-//handlerFunc(msg.data, function(responseData){
-//var callbackResponseId = msg.callbackId
-//_me2remote({responseId:callbackResponseId,responseData})
-//})
-//}
-g_handler_a['external']=function(callData,callMsg,pubnubMsg){
-	console.log('TODO external',callData,callMsg);
-};
+//TODO registerHandler
 //gBridge.registerHandler('external',({callbackId,data})=>{
-//	//invoke the cmd
-//	var s = exec(data.cmd);
-//	var responseId=callbackId;
-//	var responseData={s};
-//	gBridge.callHandler('external_callback',{responseId,responseData});
+
+g_handler_a['external']=function(callData,callMsg,pubnubMsg,cb){
+	//console.log('TODO external',callData,callMsg);
+	var exec = require('child_process').exec;
+	var cmd_s = ('string'==typeof callData)?callData:(callData||{}).cmd;//TODO build cmd_s if not string....?
+	//var cmd_s=`${cmd} --user-data-dir=${tmpdir}/${name} . --rnd=${rnd} `+arg_rest.join(' ');
+	console.log('cmd_s:',cmd_s);
+	exec(cmd_s,function(err,stdout,stderr){
+		if(err) { console.log('error:'+err); } console.log('stderr:'+stderr); console.log('stdout:'+stdout);//TMP DEBUG
+		if(cb) cb({stdout,stderr});
+	});
+};
+
 //});
 
