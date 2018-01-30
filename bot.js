@@ -45,26 +45,21 @@ var channel_uplink = 'PUBLIC';
 var channel_dnlink = my_uuid;
 var channel_signin = 'PUBLIC';
 
-pubnub_bot.subscribe({ channels: [
-	//'PUBLIC',//no use
-	channel_dnlink
-] });
-
 pubnub_bot.addListener({
-	message: function(m) {
-		var msg=m.message||{};
-		var SKEY=msg.SKEY;
+	message: function(pubnubMsg) {
+		var bot_msg=pubnubMsg.message||{};
+		var SKEY=bot_msg.SKEY;
 		if(SKEY){
 			if(!SKEY_SVR){ SKEY_SVR=SKEY; }
 			if(SKEY!=SKEY_SVR){ console.log('SKEY changed, exit and wait for next round'); process.exit(); }
 			if(!pubnub_svr){
-				console.log('SKEY Update:',m);
+				console.log('SKEY Update:',pubnubMsg);
 				pubnub_svr = new PubNubCls({ subscribeKey: SKEY_SVR, });
 				pubnub_svr.setUUID(my_uuid);
 				pubnub_svr.addListener({
-					message: function(m) {
+					message: function(pubnubMsg) {
 						/////////////////////////////// call the handler
-						var {handlerName,callbackId,callData} = m.message;
+						var {handlerName,callbackId,callData} = pubnubMsg.message;
 						var handlerFunc = g_handler_a[handlerName];
 						if(handlerFunc){
 							var callback=null;
@@ -84,9 +79,9 @@ pubnub_bot.addListener({
 							}else{
 								console.log('TODO no callbackId from svr');
 							}
-							handlerFunc(callData,m.message,m,callback);
+							handlerFunc(callData,pubnubMsg.message,pubnubMsg,callback);
 						}else{
-							console.log('TODO server message:',m);
+							console.log('TODO server message:',pubnubMsg);
 						}
 					},
 					status: function(s) { console.log('pubnub_svr status:',s); }
@@ -94,11 +89,13 @@ pubnub_bot.addListener({
 				pubnub_svr.subscribe({ channels: [my_uuid], });
 			}
 		}else{
-			console.log('TODO message:',m);
+			console.log('TODO message:',pubnubMsg);
 		}
 	},
 	status: function(s) { console.log('bot status:',s); }
 });
+
+pubnub_bot.subscribe({ channels: [ channel_dnlink ] });
 
 /////////////////////////////// set the handler
 g_handler_a['external']=function(callData,callMsg,pubnubMsg,cb){
