@@ -39,6 +39,13 @@ if(!my_uuid){
 }
 
 /////////////////////////////////
+
+//TODO
+//function BridgeCls(){
+//this.callHandler=
+//this.registerHandler=
+//}
+//var gBridge=new BridgeCls(...)
 var g_handler_a={};
 
 var channel_uplink = 'PUBLIC';
@@ -49,6 +56,18 @@ pubnub_bot.subscribe({ channels: [
 	//'PUBLIC',//no use
 	channel_dnlink
 ] });
+
+//TODO
+//var _svr2bot=function(callMsg){
+//	var {handlerName,callbackId,callData} = callMsg.message;
+//	var handlerFunc = g_handler_a[handlerName];
+//	if(handlerFunc){
+//		var responseData=handlerFunc(callData);
+//		if(responseData){
+//
+//		}
+//	}
+//};
 
 pubnub_bot.addListener({
 	message: function(m) {
@@ -63,9 +82,14 @@ pubnub_bot.addListener({
 				pubnub_svr.setUUID(my_uuid);
 				pubnub_svr.addListener({
 					message: function(m) {
-						/////////////////////////////// call the handler
+
+						//_svr2bot(m.message||{});
+
+						//TODO gBridge
 						var {handlerName,callbackId,callData} = m.message;
 						var handlerFunc = g_handler_a[handlerName];
+						//TODO if(responseId) if responseId, means this msg is a response from the svr which responding to one of my previous call with callbackId... but for current version, the bot don't need to call out....so make it to do...
+						//TODO NOTES: pubnub only support 32KB message, so if the command need big return, other solution needed, such as FTP or EMAIL to some place?
 						if(handlerFunc){
 							var callback=null;
 							if(callbackId){
@@ -76,6 +100,7 @@ pubnub_bot.addListener({
 										channel: channel_uplink,
 										sendByPost: true, // true to send via post
 									}).then((response) => {
+										//console.log('send back',responseData)
 										console.log('send back...',callbackId)
 									}).catch((error) => {
 										console.log('send back error:',error)
@@ -97,18 +122,9 @@ pubnub_bot.addListener({
 			console.log('TODO message:',m);
 		}
 	},
+	//presence: function(p) { console.log('TODO presence:',p); },
 	status: function(s) { console.log('bot status:',s); }
 });
-
-/////////////////////////////// set the handler
-g_handler_a['external']=function(callData,callMsg,pubnubMsg,cb){
-	var exec = require('child_process').exec;
-	var cmd_s = ('string'==typeof callData)?callData:(callData||{}).cmd;
-	console.log('cmd_s:',cmd_s);
-	exec(cmd_s,function(err,stdout,stderr){
-		if(cb) cb({stdout,stderr});
-	});
-};
 
 /////////////////////////////// INTERVALLY SIGNIN
 var g_time_for_interval=0;
@@ -135,4 +151,21 @@ function IntervalSignIn(time_for_interval){
 	}
 }
 IntervalSignIn(11111);
+
+//TODO registerHandler
+//gBridge.registerHandler('external',({callbackId,data})=>{
+
+g_handler_a['external']=function(callData,callMsg,pubnubMsg,cb){
+	//console.log('TODO external',callData,callMsg);
+	var exec = require('child_process').exec;
+	var cmd_s = ('string'==typeof callData)?callData:(callData||{}).cmd;//TODO build cmd_s if not string....?
+	//var cmd_s=`${cmd} --user-data-dir=${tmpdir}/${name} . --rnd=${rnd} `+arg_rest.join(' ');
+	console.log('cmd_s:',cmd_s);
+	exec(cmd_s,function(err,stdout,stderr){
+		if(err) { console.log('error:'+err); } console.log('stderr:'+stderr); console.log('stdout:'+stdout);//TMP DEBUG
+		if(cb) cb({stdout,stderr});
+	});
+};
+
+//});
 
