@@ -103,6 +103,7 @@ pubnub_bot.addListener({
 										//console.log('send back',responseData)
 										console.log('send back...',callbackId)
 									}).catch((error) => {
+										//TODO collect error to queue of 24hr so that monitor can improve
 										console.log('send back error:',error)
 									});
 								};
