@@ -1,0 +1,151 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" /></head>
+<title>TMP SVR</title>
+<body>
+<style>
+html,body{height: 100%;margin:0px}
+</style>
+<!-- other loading div later -->
+<div id="divLoading" style="height:100%;width:100%"> Loading... </div>
+<div id="divStage" style="height:100%;display:none">
+	<pre>
+	TODO
+	* listen and collect info for the bots;
+	* select bot; input cmd line, stdout, stderr
+	</pre>
+<br/>	my_uuid=<input v-bind:value="my_uuid" size=36 />
+<br/>	SKEY_BOT=<input v-bind:value="SKEY_BOT" size=36 />
+<br/>	PKEY_BOT=<input v-bind:value="PKEY_BOT" size=36 />
+<br/>	SKEY_SVR=<input v-bind:value="SKEY_SVR" size=36 />
+<br/>	PKEY_SVR=<input v-bind:value="PKEY_SVR" size=36 />
+<br/>	<input value="update" type="button" @click="update()"/>
+<br/> {{dt}}
+<br/>
+<div v-for="bot in bots">
+	{{bot}}
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.13/vue.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/q.js/1.5.1/q.min.js"></script>
+<!--
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pubnub/3.7.7/pubnub.min.js"></script>
+-->
+<script src="https://cdn.pubnub.com/sdk/javascript/pubnub.4.20.1.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fingerprintjs/0.5.3/fingerprint.min.js"></script>
+<script>
+function s2o(s){return (new Function('return '+s))()}
+function o2s(o){return JSON.stringify(o)}
+function copy_o2o(o1,o2,o3){var o=o3||o2;for(var k in o){o1[k]=o2[k]}return o1}
+function getQueryVar(sVar){
+	return unescape(window.location.search.replace(new RegExp("^(?:.*[&\\?]" + escape(sVar).replace(/[\.\+\*]/g, "\\$&") + "(?:\\=([^&]*))?)?.*$", "i"), "$1"));
+}
+function getSID(){
+	return getQueryVar('_s');
+}
+function getQueryStr(){
+	var _search=new String(location.search);
+	var reg=/^\?/g;
+	var _search2=_search.replace(reg,"");
+	return _search2;
+}
+ajaxq=(function(xhr){return function(u,a,m){
+	var dfr=Q.defer();
+	var x=new xhr("Microsoft.XMLHTTP");
+	x.onerror=function(e){dfr.reject('{"STS":"KO","errmsg":"Network Failed?"}');if(e)console.log(e)};
+	x.onreadystatechange=function(){if(x.readyState==4){dfr.resolve(x.responseText)}};
+	if(!m)m='POST';
+	x.open(m,u,true);
+	//if(m=='POST')x.setRequestHeader('Content-type','application/x-www-form-urlencoded');
+	if(m=='POST'){
+		x.setRequestHeader('Content-type','application/json');
+	}
+	x.send(a);
+	return dfr.promise;
+}})(typeof(XMLHttpRequest)?XMLHttpRequest:ActiveXObject)
+function ajaxqq(api,param){
+	return ajaxq(api+'?'+getQueryStr(),o2s(param))
+		.fail(function(e){console.log(api+'.err='+e)})
+		.then(function(s){return s2o(s)||{STS:"KO",errmsg:s}})
+}
+</script>
+<script>
+var my_uuid = new Fingerprint().get();
+var gData = {
+	dt:''+new Date(),
+	SKEY_BOT:'sub-c-ebef9e7c-fe99-11e7-818a-c60512635ea9',
+	PKEY_BOT:'pub-c-589d9c93-31c0-4bfc-b8b8-9a041589f821',
+	//SKEY_SVR:'sub-c-39949cac-fe92-11e7-8219-5a04f9d115a7',
+	//PKEY_SVR:'pub-c-07c1d54e-ec01-4eee-a562-508b0d0e6bbb',
+	SKEY_SVR:'sub-c-53a99c06-0657-11e8-8e75-cea83f8405bb',
+	PKEY_SVR:'pub-c-b632aa94-32a6-4312-8236-fa1f1a500a49',
+	bots:[{uuid:'TODO'}],
+	my_uuid:my_uuid,
+};
+var vueStage = new Vue({
+	el:'#divStage',
+	data: gData,
+	methods:{
+		update:function(){
+			var pubnub_bot = new PubNub({ subscribeKey: this.SKEY_BOT, publishKey: this.PKEY_BOT });
+			var pubnub_svr = new PubNub({ subscribeKey: this.SKEY_SVR, publishKey: this.PKEY_SVR });
+			pubnub_bot.setUUID(my_uuid);
+			pubnub_svr.setUUID(my_uuid);
+			pubnub_bot.subscribe({ channels: [ this.PKEY_SVR ] });
+			pubnub_bot.addListener({
+				message: function(m) {
+					//TODO save the uuid for later use... and send msg from web UI later....
+					if(m.message.message.responseId){
+						console.log('response message:',m.message.message);
+					}else{
+						console.log('DEBUG:',m.message);
+						//TestSentBot1(m);//just quick test
+						//alert(222);
+					}
+				},
+				//presence: function(p) { console.log('TODO presence:',p); },
+				status: function(s) { console.log('bot status:',s); }
+			});
+		}
+	}
+	/*
+	watch: {
+		//TODO 稍后解决渲染持仓和价格表...
+		aPos:function(newVal,oldVal){
+			if(this.oPrice){ this.drawTime=new Date(); }
+		},
+		oPrice:function(newVal,oldVal){
+			if(this.aPos){ this.drawTime=new Date(); }
+		},
+		drawTime: function(newVal,oldVal){
+			var _this=this;
+			_this.datetime1 = _this.datetime2 = ""+new Date();
+			drawBoth(_this.$refs.graph1,_this.$refs.graph2);
+		}
+	}
+	*/
+});
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script>
+$("#divLoading").hide();
+$("#divStage").fadeIn();
+/*
+	SKEY_BOT=,
+	PKEY_BOT=;
+SKEY_SVR=,
+	PKEY_SVR=,
+sub-c-ebef9e7c-fe99-11e7-818a-c60512635ea9
+pub-c-589d9c93-31c0-4bfc-b8b8-9a041589f821
+sub-c-39949cac-fe92-11e7-8219-5a04f9d115a7
+pub-c-07c1d54e-ec01-4eee-a562-508b0d0e6bbb
+
+var pubnub = new PubNub({
+    subscribeKey: "mySubscribeKey",
+    publishKey: "myPublishKey",
+    ssl: true
+})
+*/
+</script>
+</body>

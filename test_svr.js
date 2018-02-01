@@ -18,10 +18,10 @@ var persit_config= persit_config || {
 };
 _Storage.initSync(persit_config);
 
-var PubNubCls = require('pubnub');//ES5
+var PubNub = require('pubnub');//ES5
 
-var pubnub_bot = new PubNubCls({ subscribeKey: SKEY_BOT, publishKey: PKEY_BOT });
-var pubnub_svr = new PubNubCls({ subscribeKey: SKEY_SVR, publishKey: PKEY_SVR });
+var pubnub_bot = new PubNub({ subscribeKey: SKEY_BOT, publishKey: PKEY_BOT });
+var pubnub_svr = new PubNub({ subscribeKey: SKEY_SVR, publishKey: PKEY_SVR });
 
 var my_uuid = _Storage.getItemSync(bot_id +'_' + 'uuid');
 if(!my_uuid){
